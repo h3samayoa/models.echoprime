@@ -11,3 +11,10 @@ __MACOSX/._model_data
 dist/
 __pycache__/
 poetry.lock
+
+# Terraform
+*.terraform/
+*tfplan*
+*.tfstate
+*.tfstate.backup
+*.terraform.lock.hcl

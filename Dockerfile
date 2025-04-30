@@ -5,7 +5,8 @@ ENV PIP_ROOT_USER_ACTION=ignore
 
 # Install Poetry
 RUN apt-get update && \
-    apt-get install -y curl && \
+    apt-get install -y --no-install-recommends curl openjdk-11-jre-headless ca-certificates-java && \
+    rm -rf /var/lib/apt/lists/* && \
     curl -sSL https://install.python-poetry.org | python3 - && \
     ln -s /root/.local/bin/poetry /usr/local/bin/
 
@@ -24,3 +25,9 @@ COPY . .
 
 # Uninstall opencv-python if it was installed as a dependency of another package
 RUN python -m pip uninstall -y opencv-python || true
+
+RUN chmod +x /workspace/EchoPrime/entrypoint.sh
+
+EXPOSE 8080
+
+ENTRYPOINT ["/workspace/EchoPrime/entrypoint.sh"]

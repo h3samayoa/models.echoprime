@@ -1,0 +1,14 @@
+model_data/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.vscode/
+*.ipynb_checkpoints
+opentofu/
+*.terraform/
+*.terraform/*
+*tfplan*
+*.tfstate
+*.tfstate.backup
+*.terraform.lock.hcl
