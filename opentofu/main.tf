@@ -9,7 +9,6 @@ resource "random_string" "bucket_suffix" {
   numeric = true
 }
 
-# IAM module for roles and policies
 module "iam" {
   source = "./modules/iam"
   

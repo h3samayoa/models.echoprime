@@ -10,8 +10,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
-    
+    runs-on: ubuntu-latest    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,11 +36,11 @@ jobs:
         working-directory: ./opentofu
         run: tofu validate
       
+      # Get short Git SHA for image tag
       - name: Get short Git SHA
         id: sha
         run: echo "sha=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
       
-      # Apply only ECR repository first
       - name: Apply ECR repository
         working-directory: ./opentofu
         run: |
@@ -56,7 +55,6 @@ jobs:
         id: ecr-repo
         working-directory: ./opentofu
         run: |
-          # Use the correct output name 'repository_url' from the root module
           REPO_URL=$(tofu output -raw repository_url) 
           echo "url=${REPO_URL}" >> $GITHUB_OUTPUT
       

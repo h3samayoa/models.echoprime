@@ -1,6 +1,3 @@
-# IAM Resources for EchoPrime SageMaker Deployment
-
-# SageMaker Execution Role
 resource "aws_iam_role" "sagemaker_role" {
   name        = "${var.name_prefix}-sagemaker-role"
   description = "IAM role for SageMaker to access AWS resources"
