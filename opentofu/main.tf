@@ -25,11 +25,3 @@ module "storage" {
   bucket_suffix = random_string.bucket_suffix.result
   tags          = local.common_tags
 }
-
-# ECR module for container registry
-module "ecr" {
-  source = "./modules/ecr"
-  
-  name_prefix = local.name_prefix
-  tags        = local.common_tags
-}

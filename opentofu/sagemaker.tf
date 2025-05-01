@@ -3,8 +3,9 @@ resource "aws_sagemaker_model" "echoprime_model" {
   execution_role_arn = module.iam.sagemaker_role_arn
 
   primary_container {
-    image          = "${module.ecr.repository_url}@${data.aws_ecr_image.echoprime_image.image_digest}"
-    model_data_url = "s3://${module.storage.bucket_name}/model/model.tar.gz"
+    # Use the full image URI provided by the external build process
+    image          = var.ecr_image_uri 
+    model_data_url = "s3://${module.storage.bucket_name}/model/model.tar.gz" # Assuming model data is handled separately
   }
 
   tags = local.common_tags

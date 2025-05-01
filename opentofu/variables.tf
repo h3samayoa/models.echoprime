@@ -30,4 +30,11 @@ variable "tags" {
 variable "image_tag" {
   description = "The specific tag (e.g., Git SHA) of the ECR image to deploy"
   type        = string
+  default     = "latest"
+}
+
+variable "ecr_image_uri" {
+  description = "The full URI of the ECR image (including tag) to deploy, supplied by the build process."
+  type        = string
+  # No default value - this must be provided externally
 }

@@ -18,11 +18,6 @@ output "sagemaker_bucket_kms_key_arn" {
   value       = module.storage.kms_key_arn
 }
 
-output "ecr_repository_url" {
-  description = "URL of the ECR repository for container images"
-  value       = module.ecr.repository_url
-}
-
 output "sagemaker_endpoint_name" {
   description = "Name of the SageMaker endpoint"
   value       = aws_sagemaker_endpoint.echoprime_endpoint.name
@@ -42,6 +37,6 @@ output "github_actions_configuration" {
   description = "Configuration information for GitHub Actions"
   value = {
     region       = var.aws_region
-    ecr_repo_url = module.ecr.repository_url
+    # ecr_repo_url removed as ECR is managed externally
   }
 }
