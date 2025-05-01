@@ -1,24 +1,19 @@
-name: EchoPrime Build and Deploy
+name: EchoPrime Build and Push ECR Image
 
 on:
   push:
     branches: [ main ]
     paths:
-      - 'echoprime/**'
-      - 'opentofu/**'
+      - 'echoprime/**' 
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest    
+  build-and-push:
+    runs-on: ubuntu-latest
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
-      - name: Setup OpenTofu 
-        uses: opentofu/setup-opentofu@v1
-        with:
-          tofu_version: "1.6.0"
       
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -28,60 +23,42 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           mask-aws-account-id: true
       
-      - name: Initialize OpenTofu
-        working-directory: ./opentofu
-        run: tofu init -backend=true
-      
-      - name: Validate configuration
-        working-directory: ./opentofu
-        run: tofu validate
-      
-      # Get short Git SHA for image tag
       - name: Get short Git SHA
         id: sha
         run: echo "sha=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
-      
-      - name: Apply ECR repository
-        working-directory: ./opentofu
-        run: |
-          tofu apply -auto-approve -target=module.ecr.aws_ecr_repository.echoprime_repo
-          echo "ECR repository successfully applied"
-      
+        
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
       
-      - name: Get ECR repository URL
-        id: ecr-repo
-        working-directory: ./opentofu
-        run: |
-          REPO_URL=$(tofu output -raw repository_url) 
-          echo "url=${REPO_URL}" >> $GITHUB_OUTPUT
-      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
-      - name: Build and push
+        
+      - name: Define ECR image URI
+        id: define-uri
+        run: |
+          ECR_REPOSITORY_NAME="echoprime" # Assuming this is the desired repo name
+          ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
+          ECR_IMAGE_URI_BASE="${ECR_REGISTRY}/${ECR_REPOSITORY_NAME}"
+          echo "ECR_IMAGE_URI_TAGGED=${ECR_IMAGE_URI_BASE}:${{ steps.sha.outputs.sha }}" >> $GITHUB_ENV
+          echo "ECR_IMAGE_URI_LATEST=${ECR_IMAGE_URI_BASE}:latest" >> $GITHUB_ENV
+          echo "Image base URI: ${ECR_IMAGE_URI_BASE}"
+          echo "Tagged image URI: ${ECR_IMAGE_URI_TAGGED}"
+
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./echoprime
           push: true
-          tags: ${{ steps.ecr-repo.outputs.url }}:${{ steps.sha.outputs.sha }}
+          tags: |
+            ${{ env.ECR_IMAGE_URI_TAGGED }}
+            ${{ env.ECR_IMAGE_URI_LATEST }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      
-      - name: Apply full infrastructure
-        working-directory: ./opentofu
+          
+      - name: Build Summary
         run: |
-          IMAGE_TAG="${{ steps.sha.outputs.sha }}"
-          echo "Applying full infrastructure with image tag: ${IMAGE_TAG}"
-          tofu plan -var="image_tag=${IMAGE_TAG}" -out=tfplan
-          tofu apply -auto-approve tfplan
-          echo "Infrastructure successfully updated"
-      
-      - name: Deployment Summary
-        run: |
-          echo "EchoPrime deployment summary:"
+          echo "Docker image build and push summary:"
           echo "- Git Commit: ${{ steps.sha.outputs.sha }}"
-          echo "- Image: ${{ steps.ecr-repo.outputs.url }}:${{ steps.sha.outputs.sha }}"
-          echo "- Infrastructure successfully updated"
+          echo "- Image Tagged: ${{ env.ECR_IMAGE_URI_TAGGED }}"
+          echo "- Image Latest: ${{ env.ECR_IMAGE_URI_LATEST }}"
