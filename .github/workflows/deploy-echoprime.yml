@@ -37,5 +37,5 @@ jobs:
           REPOSITORY: ${{ secrets.ECR_REPO_NAME }}
           IMAGE_TAG: ${{ steps.sha.outputs.sha }}
         run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -f ./echoprime/Dockerfile ./echoprime
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -f ./Dockerfile
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
