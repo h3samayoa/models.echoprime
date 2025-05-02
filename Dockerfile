@@ -18,7 +18,7 @@ COPY pyproject.toml ./
 
 # Install dependencies
 # Using --no-root because we've set package-mode = false in pyproject.toml
-RUN poetry install --no-interaction --no-ansi --no-dev --no-root
+RUN poetry install --no-interaction --no-ansi --without dev --no-root
 
 # Copy the rest of the application
 COPY . .
