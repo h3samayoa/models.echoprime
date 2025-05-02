@@ -8,7 +8,7 @@ license = "MIT"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 # Dependencies from requirements.txt with exact versions
 ipywidgets = "8.1.2"
 mysql-connector-python = "8.0.31"
