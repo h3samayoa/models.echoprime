@@ -15,44 +15,33 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-          mask-aws-account-id: true
       
       - name: Get short Git SHA
         id: sha
         run: echo "sha=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
         
       - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-      
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY_URL }}
+        env:
+           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+           AWS_REGION: ${{ secrets.AWS_REGION }}
+           
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         
       - name: Define ECR image URI
         id: define-uri
         run: |
-          ECR_REPOSITORY_NAME="echoprime" # Assuming this is the desired repo name
-          ECR_REGISTRY="${{ steps.login-ecr.outputs.registry }}"
-          ECR_IMAGE_URI_BASE="${ECR_REGISTRY}/${ECR_REPOSITORY_NAME}"
-          echo "ECR_IMAGE_URI_TAGGED=${ECR_IMAGE_URI_BASE}:${{ steps.sha.outputs.sha }}" >> $GITHUB_ENV
-          echo "ECR_IMAGE_URI_LATEST=${ECR_IMAGE_URI_BASE}:latest" >> $GITHUB_ENV
-          echo "Image base URI: ${ECR_IMAGE_URI_BASE}"
-          echo "Tagged image URI: ${ECR_IMAGE_URI_TAGGED}"
+          echo "ECR_IMAGE_TAGGED=${{ secrets.ECR_REPO_URI }}:${{ steps.sha.outputs.sha }}" >> $GITHUB_ENV
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./echoprime
           push: true
-          tags: |
-            ${{ env.ECR_IMAGE_URI_TAGGED }}
-            ${{ env.ECR_IMAGE_URI_LATEST }}
+          tags: ${{ env.ECR_IMAGE_TAGGED }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           
@@ -60,5 +49,4 @@ jobs:
         run: |
           echo "Docker image build and push summary:"
           echo "- Git Commit: ${{ steps.sha.outputs.sha }}"
-          echo "- Image Tagged: ${{ env.ECR_IMAGE_URI_TAGGED }}"
-          echo "- Image Latest: ${{ env.ECR_IMAGE_URI_LATEST }}"
+          echo "- Image Tagged: ${{ env.ECR_IMAGE_TAGGED }}"
