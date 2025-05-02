@@ -34,8 +34,8 @@ jobs:
       - name: Build, tag, and push image
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
-          IMAGE_TAG: ${{ steps.sha.outputs.sha }}
+          REPOSITORY: ${{ secrets.ECR_REPO_NAME }}
+          IMAGE_TAG: ${{ steps.sha }}
         run: |
           docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -f ./echoprime/Dockerfile ./echoprime
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
