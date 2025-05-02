@@ -15,38 +15,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      
-      - name: Get short Git SHA
-        id: sha
-        run: echo "sha=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_OUTPUT
-        
-      - name: Login to Amazon ECR
-        run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPO_URI }}
-        env:
-           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-           AWS_REGION: ${{ secrets.AWS_REGION }}
-           
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        
-      - name: Define ECR image URI
-        id: define-uri
-        run: |
-          echo "ECR_IMAGE_TAGGED=${{ secrets.ECR_REPO_URI }}:${{ steps.sha.outputs.sha }}" >> $GITHUB_ENV
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          context: ./echoprime
-          push: true
-          tags: ${{ env.ECR_IMAGE_TAGGED }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} 
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          mask-aws-account-id: true
           
-      - name: Build Summary
+      - name: Login to Amazon ECR
+        id: login-ecr 
+        uses: aws-actions/amazon-ecr-login@v2
+           
+      - name: Build, tag, and push image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          echo "Docker image build and push summary:"
-          echo "- Git Commit: ${{ steps.sha.outputs.sha }}"
-          echo "- Image Tagged: ${{ env.ECR_IMAGE_TAGGED }}"
+          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG -f ./echoprime/Dockerfile ./echoprime
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
